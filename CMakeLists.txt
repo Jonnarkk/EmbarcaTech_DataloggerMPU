@@ -37,6 +37,7 @@ target_link_libraries(${PROJECT_NAME}
         FatFs_SPI
         hardware_clocks
         hardware_adc
+        hardware_i2c
         )
 
 pico_enable_stdio_usb(${PROJECT_NAME} 1)

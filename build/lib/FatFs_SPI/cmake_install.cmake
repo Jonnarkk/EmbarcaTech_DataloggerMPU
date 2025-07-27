@@ -1,4 +1,4 @@
-# Install script for directory: Z:/BDL/SDK/SD_Card/SD_Card03/lib/FatFs_SPI
+# Install script for directory: C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/lib/FatFs_SPI
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,12 +34,12 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "C:/Users/wilto/.pico-sdk/toolchain/14_2_Rel1/bin/arm-none-eabi-objdump.exe")
+  set(CMAKE_OBJDUMP "C:/Users/Miller/.pico-sdk/toolchain/14_2_Rel1/bin/arm-none-eabi-objdump.exe")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "Z:/BDL/SDK/SD_Card/SD_Card03/build/lib/FatFs_SPI/install_local_manifest.txt"
+  file(WRITE "C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/lib/FatFs_SPI/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

@@ -6,9 +6,13 @@
 #include <time.h>
 
 #include "hardware/adc.h"
-#include "hardware/rtc.h"
 #include "pico/stdlib.h"
 
+// Bibliotecas para o MPU6050
+#include "pico/binary_info.h"
+#include "hardware/i2c.h"
+
+// Bibliotecas para o FatFS e manipulação do cartão MicroSD
 #include "ff.h"
 #include "diskio.h"
 #include "f_util.h"
@@ -16,14 +20,72 @@
 #include "my_debug.h"
 #include "rtc.h"
 #include "sd_card.h"
+#include "hardware/rtc.h"
 
 #define ADC_PIN 26 // GPIO 26
+// Endereço I2C do MPU6050
+#define I2C_PORT i2c0               // i2c0 pinos 0 e 1, i2c1 pinos 2 e 3
+#define I2C_SDA 0                   // 0 ou 2
+#define I2C_SCL 1                  // 1 ou 3
 
+
+// Variáveis Globais
+static int addr = 0x68;             // O endereço padrao deste IMU é o 0x68
 static bool logger_enabled;
 static const uint32_t period = 1000;
 static absolute_time_t next_log_time;
 
 static char filename[20] = "adc_data1.txt";
+static const char* log_filename = "logs_mpu.csv";
+
+// Funções para Inicialização do MPU6050
+static void mpu6050_reset() {
+     // Two byte reset. First byte register, second byte data
+     // There are a load more options to set up the device in different ways that could be added here
+     uint8_t buf[] = {0x6B, 0x80};
+     i2c_write_blocking(I2C_PORT, addr, buf, 2, false);
+     sleep_ms(100); // Allow device to reset and stabilize
+ 
+     // Clear sleep mode (0x6B register, 0x00 value)
+     buf[1] = 0x00;  // Clear sleep mode by writing 0x00 to the 0x6B register
+     i2c_write_blocking(I2C_PORT, addr, buf, 2, false); 
+     sleep_ms(10); // Allow stabilization after waking up
+ }
+ 
+ static void mpu6050_read_raw(int16_t accel[3], int16_t gyro[3], int16_t *temp) {
+     // For this particular device, we send the device the register we want to read
+     // first, then subsequently read from the device. The register is auto incrementing
+     // so we don't need to keep sending the register we want, just the first.
+ 
+     uint8_t buffer[6];
+ 
+     // Start reading acceleration registers from register 0x3B for 6 bytes
+     uint8_t val = 0x3B;
+     i2c_write_blocking(I2C_PORT, addr, &val, 1, true); // true to keep master control of bus
+     i2c_read_blocking(I2C_PORT, addr, buffer, 6, false);
+ 
+     for (int i = 0; i < 3; i++) {
+         accel[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);
+     }
+ 
+     // Now gyro data from reg 0x43 for 6 bytes
+     // The register is auto incrementing on each read
+     val = 0x43;
+     i2c_write_blocking(I2C_PORT, addr, &val, 1, true);
+     i2c_read_blocking(I2C_PORT, addr, buffer, 6, false);  // False - finished with bus
+ 
+     for (int i = 0; i < 3; i++) {
+         gyro[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);;
+     }
+ 
+     // Now temperature from reg 0x41 for 2 bytes
+     // The register is auto incrementing on each read
+     val = 0x41;
+     i2c_write_blocking(I2C_PORT, addr, &val, 1, true);
+     i2c_read_blocking(I2C_PORT, addr, buffer, 2, false);  // False - finished with bus
+ 
+     *temp = buffer[0] << 8 | buffer[1];
+ }
 
 static sd_card_t *sd_get_by_name(const char *const name)
 {
@@ -316,6 +378,76 @@ void read_file(const char *filename)
     printf("\nLeitura do arquivo %s concluída.\n\n", filename);
 }
 
+// Função para capturar dados do ADC e salvar no arquivo *.txt
+void log_mpu_data(){
+    const int num_amostras = 100; // Grava 100 amostras
+    const int amostra_intervalo_ms = 100; // Intervalo de 200ms entre amostras
+
+
+    printf("\nIniciando a captura de dados do MPU6050\n");
+    FIL file;
+    FRESULT res = f_open(&file, log_filename, FA_WRITE | FA_CREATE_ALWAYS);
+    if (res != FR_OK)
+    {
+        printf("\n[ERRO] Não foi possível abrir o arquivo para escrita. Monte o Cartao.\n");
+        return;
+    }
+
+    // Faz a verificação para ver se o arquivo foi criado
+    if (res != FR_OK)
+    {
+        printf("[ERRO] Não foi possível escrever no arquivo. O cartão foi montado? %s\n", FRESULT_str(res));
+        f_close(&file);
+        return;
+    }
+
+    // Escreve o cabeçalho do arquivo CSV e verifica se foi corretamente escrito
+    if (f_puts("Timestamp,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,TempC\n", &file) < 0) {
+        printf("[ERRO] Falha ao escrever o cabecalho.\n");
+        f_close(&file);
+        return;
+    }
+
+    // Variáveis para armazenar os dados do sensor
+    int16_t acceleration[3], gyro[3], temp;
+    datetime_t t;
+    char buffer[128];
+
+    // Loop de logging para coletar as amostras
+    for (int i = 0; i < num_amostras; ++i) {
+        // Lê os dados brutos do sensor
+        mpu6050_read_raw(acceleration, gyro, &temp);
+        
+        // Pega a data e hora atuais do RTC
+        rtc_get_datetime(&t);
+
+        // Formata a linha do CSV usando sprintf
+        int len = snprintf(buffer, sizeof(buffer),
+                         "%04d-%02d-%02d %02d:%02d:%02d,%d,%d,%d,%d,%d,%d,%.2f\n",
+                         t.year, t.month, t.day, t.hour, t.min, t.sec,
+                         acceleration[0], acceleration[1], acceleration[2],
+                         gyro[0], gyro[1], gyro[2],
+                         (temp / 340.0) + 36.53); // Converte temperatura para Celsius
+
+        // Escreve a linha formatada no arquivo
+        if (f_write(&file, buffer, len, NULL) != FR_OK) {
+            printf("[ERRO] Falha ao escrever amostra %d no arquivo.\n", i + 1);
+            break; // Sai do loop em caso de erro
+        }
+        
+        // Imprime um feedback no console a cada 10 amostras
+        if ((i + 1) % 10 == 0) {
+            printf("... %d amostras gravadas ...\n", i + 1);
+        }
+
+        sleep_ms(amostra_intervalo_ms); // Delay para a próxima leitura
+    }
+
+    // Fecha o arquivo para garantir que todos os dados sejam salvos
+    f_close(&file);
+    printf("\nDados do MPU salvos no arquivo %s.\n\n", log_filename);
+}
+
 // Trecho para modo BOOTSEL com botão B
 #include "pico/bootrom.h"
 #define botaoB 6
@@ -334,6 +466,7 @@ static void run_help()
     printf("Digite 'e' para obter espaço livre no cartão SD\n");
     printf("Digite 'f' para capturar dados do ADC e salvar no arquivo\n");
     printf("Digite 'g' para formatar o cartão SD\n");
+    printf("Digite 'i' para capturar dados do MPU6050 e salvar em formato CSV\n");
     printf("Digite 'h' para exibir os comandos disponíveis\n");
     printf("\nEscolha o comando:  ");
 }
@@ -418,13 +551,30 @@ static void process_stdio(int cRxedChar)
     }
 }
 
-int main()
-{
+// Função para inicialização dos periféricos utilizados
+void setup(){
     // Para ser utilizado o modo BOOTSEL com botão B
     gpio_init(botaoB);
     gpio_set_dir(botaoB, GPIO_IN);
     gpio_pull_up(botaoB);
     gpio_set_irq_enabled_with_callback(botaoB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+
+// This example will use I2C0 on the default SDA and SCL pins (4, 5 on a Pico)
+    i2c_init(I2C_PORT, 400 * 1000);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
+    // Make the I2C pins available to picotool
+    printf("Antes do bi_decl...\n");
+    bi_decl(bi_2pins_with_func(I2C_SDA, I2C_SCL, GPIO_FUNC_I2C));
+    printf("Antes do reset MPU...\n");
+    mpu6050_reset();
+}
+
+int main(){
+
+    setup();
 
     stdio_init_all();
     sleep_ms(5000);
@@ -465,7 +615,7 @@ int main()
         }
         if (cRxedChar == 'd') // Exibe o conteúdo do arquivo se pressionar 'd'
         {
-            read_file(filename);
+            read_file(log_filename);
             printf("Escolha o comando (h = help):  ");
         }
         if (cRxedChar == 'e') // Obtém o espaço livre no SD card se pressionar 'e'
@@ -485,6 +635,10 @@ int main()
             printf("\nProcesso de formatação do SD iniciado. Aguarde...\n");
             run_format();
             printf("\nFormatação concluída.\n\n");
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'i') {
+            log_mpu_data();
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'h') // Exibe os comandos disponíveis se pressionar 'h'
