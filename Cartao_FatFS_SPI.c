@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <time.h>
 
 #include "hardware/adc.h"
@@ -402,7 +403,7 @@ void log_mpu_data(){
     }
 
     // Escreve o cabeçalho do arquivo CSV e verifica se foi corretamente escrito
-    if (f_puts("Timestamp,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,TempC\n", &file) < 0) {
+    if (f_puts("Timestamp,AccX,AccY,AccZ,Pitch,Roll,TempC\n", &file) < 0) {
         printf("[ERRO] Falha ao escrever o cabecalho.\n");
         f_close(&file);
         return;
@@ -418,16 +419,20 @@ void log_mpu_data(){
         // Lê os dados brutos do sensor
         mpu6050_read_raw(acceleration, gyro, &temp);
         
-        // Pega a data e hora atuais do RTC
-        rtc_get_datetime(&t);
+        float ax = acceleration[0] / 16384.0f;
+        float ay = acceleration[1] / 16384.0f;
+        float az = acceleration[2] / 16384.0f;
+
+        float roll  = atan2(ay, az) * 180.0f / M_PI;
+        float pitch = atan2(-ax, sqrt(ay*ay + az*az)) * 180.0f / M_PI;
 
         // Formata a linha do CSV usando sprintf
         int len = snprintf(buffer, sizeof(buffer),
-                         "%04d-%02d-%02d %02d:%02d:%02d,%d,%d,%d,%d,%d,%d,%.2f\n",
-                         t.year, t.month, t.day, t.hour, t.min, t.sec,
-                         acceleration[0], acceleration[1], acceleration[2],
-                         gyro[0], gyro[1], gyro[2],
-                         (temp / 340.0) + 36.53); // Converte temperatura para Celsius
+                         "%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
+                         i + 1,  
+                         ax, ay, az,
+                         roll, pitch,
+                         (temp / 340.0) + 18.0f); // Converte temperatura para Celsius
 
         // Escreve a linha formatada no arquivo
         if (f_write(&file, buffer, len, NULL) != FR_OK) {
