@@ -10,6 +10,10 @@
 #include "pico/stdlib.h"
 #include "libs/ssd1306.h"
 #include "libs/buzzer.h"
+#include "libs/led_matriz.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
 
 // Bibliotecas para o MPU6050
 #include "pico/binary_info.h"
@@ -41,6 +45,7 @@ static const uint32_t period = 1000;
 static absolute_time_t next_log_time;
 absolute_time_t last_press = 0;
 volatile bool modo = true;
+volatile bool esta_carregando = false;
 ssd1306_t ssd;
 
 static char filename[20] = "adc_data1.txt";
@@ -452,7 +457,7 @@ void log_mpu_data(){
             printf("... %d amostras gravadas ...\n", i + 1);
         }
 
-        sleep_ms(amostra_intervalo_ms); // Delay para a próxima leitura
+        sleep_ms(amostra_intervalo_ms);
     }
 
     // Fecha o arquivo para garantir que todos os dados sejam salvos
@@ -478,6 +483,11 @@ void gpio_irq_handler(uint gpio, uint32_t events)
         last_press = current;
     }
     if(gpio == botaoB){
+        PIO pio = pio0;
+        uint sm = pio_init(pio);
+
+        apagar_matriz(pio0, sm);
+
         ssd1306_fill(&ssd, false);
         ssd1306_send_data(&ssd);
         reset_usb_boot(0, 0);
@@ -580,6 +590,152 @@ static void process_stdio(int cRxedChar)
     }
 }
 
+void vTaskMatriz(){
+    PIO pio = pio0;
+    uint sm = pio_init(pio);
+
+    while(true){
+        if(esta_carregando){
+            animacao_ponto_desenhar_proximo_frame(pio0, sm, 0.0, 0.0, 0.1);
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+        else
+            ligar_checkmark(pio0, sm, 0.0, 0.1, 0.0);
+        
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+void vTaskPrincipal(){
+    printf("FatFS SPI example\n");
+    printf("\033[2J\033[H"); // Limpa tela
+    printf("\n> ");
+    stdio_flush();
+    //    printf("A tela foi limpa...\n");
+    //    printf("Depois do Flush\n");
+    run_help();
+    while (true)
+    {
+        int cRxedChar = getchar_timeout_us(0);
+        if (PICO_ERROR_TIMEOUT != cRxedChar)
+            process_stdio(cRxedChar);
+
+        if (cRxedChar == 'a') // Monta o SD card se pressionar 'a'
+        {   
+            montagem_sd(&ssd);
+            printf("\nMontando o SD...\n");
+            atualizar_display_status(&ssd, OPERACAO_MONTANDO);
+            esta_carregando = true;
+            run_mount();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'b') // Desmonta o SD card se pressionar 'b'
+        {
+            printf("\nDesmontando o SD. Aguarde...\n");
+            atualizar_display_status(&ssd, OPERACAO_DESMONTANDO);
+            esta_carregando = true;
+            run_unmount();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'c') // Lista diretórios e os arquivos se pressionar 'c'
+        {
+            printf("\nListagem de arquivos no cartão SD.\n");
+            atualizar_display_status(&ssd, OPERACAO_LISTAGEM);
+            esta_carregando = true;
+            run_ls();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nListagem concluída.\n");
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'd') // Exibe o conteúdo do arquivo se pressionar 'd'
+        {
+            atualizar_display_status(&ssd, OPERACAO_LEITURA);
+            esta_carregando = true;
+            if(modo)
+                read_file(log_filename);
+            else 
+                read_file(filename);
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 300, 200);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("Escolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'e') // Obtém o espaço livre no SD card se pressionar 'e'
+        {
+            printf("\nObtendo espaço livre no SD.\n\n");
+            atualizar_display_status(&ssd, OPERACAO_ESPACO);
+            esta_carregando = true;
+            run_getfree();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nEspaço livre obtido.\n");
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'f') // Captura dados do ADC e salva no arquivo se pressionar 'f'
+        {
+            atualizar_display_status(&ssd, OPERACAO_ADC);
+            modo = false;
+            esta_carregando = true;
+            capture_adc_data_and_save();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'g') // Formata o SD card se pressionar 'g'
+        {
+            printf("\nProcesso de formatação do SD iniciado. Aguarde...\n");
+            atualizar_display_status(&ssd, OPERACAO_FORMATACAO);
+            esta_carregando = true;
+            run_format();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nFormatação concluída.\n\n");
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'i') {
+            atualizar_display_status(&ssd, OPERACAO_MPU);
+            modo = true;
+            esta_carregando = true;
+            log_mpu_data();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+            printf("\nEscolha o comando (h = help):  ");
+        }
+        if (cRxedChar == 'h') // Exibe os comandos disponíveis se pressionar 'h'
+        {
+            atualizar_display_status(&ssd, OPERACAO_HELP);
+            esta_carregando = true;
+            run_help();
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
+            esta_carregando = false;
+        }
+        
+        sleep_ms(500);
+    }
+}
+
 // Função para inicialização dos periféricos utilizados
 void setup(){
     // Inicialização do botão A
@@ -623,114 +779,12 @@ int main(){
     adc_init();
     tela_inicial(&ssd);
 
-    printf("FatFS SPI example\n");
-    printf("\033[2J\033[H"); // Limpa tela
-    printf("\n> ");
-    stdio_flush();
-    //    printf("A tela foi limpa...\n");
-    //    printf("Depois do Flush\n");
-    run_help();
-    while (true)
-    {
-        int cRxedChar = getchar_timeout_us(0);
-        if (PICO_ERROR_TIMEOUT != cRxedChar)
-            process_stdio(cRxedChar);
+    // Cria tarefas 
+    xTaskCreate(vTaskMatriz, "Task da Matriz", configMINIMAL_STACK_SIZE + 128, NULL, 1, NULL);
+    xTaskCreate(vTaskPrincipal, "Task Principal", 1024, NULL, 1, NULL);
+    
+    vTaskStartScheduler();
+    panic_unsupported();
 
-        if (cRxedChar == 'a') // Monta o SD card se pressionar 'a'
-        {   
-            montagem_sd(&ssd);
-            printf("\nMontando o SD...\n");
-            atualizar_display_status(&ssd, OPERACAO_MONTANDO);
-            run_mount();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'b') // Desmonta o SD card se pressionar 'b'
-        {
-            printf("\nDesmontando o SD. Aguarde...\n");
-            atualizar_display_status(&ssd, OPERACAO_DESMONTANDO);
-            run_unmount();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'c') // Lista diretórios e os arquivos se pressionar 'c'
-        {
-            printf("\nListagem de arquivos no cartão SD.\n");
-            atualizar_display_status(&ssd, OPERACAO_LISTAGEM);
-            run_ls();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nListagem concluída.\n");
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'd') // Exibe o conteúdo do arquivo se pressionar 'd'
-        {
-            atualizar_display_status(&ssd, OPERACAO_LEITURA);
-            if(modo)
-                read_file(log_filename);
-            else 
-                read_file(filename);
-            sleep_ms(1500);
-            buzz(BUZZER, 300, 200);
-            op_concluida(&ssd);
-            printf("Escolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'e') // Obtém o espaço livre no SD card se pressionar 'e'
-        {
-            printf("\nObtendo espaço livre no SD.\n\n");
-            atualizar_display_status(&ssd, OPERACAO_ESPACO);
-            run_getfree();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nEspaço livre obtido.\n");
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'f') // Captura dados do ADC e salva no arquivo se pressionar 'f'
-        {
-            atualizar_display_status(&ssd, OPERACAO_ADC);
-            modo = false;
-            capture_adc_data_and_save();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'g') // Formata o SD card se pressionar 'g'
-        {
-            printf("\nProcesso de formatação do SD iniciado. Aguarde...\n");
-            atualizar_display_status(&ssd, OPERACAO_FORMATACAO);
-            run_format();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nFormatação concluída.\n\n");
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'i') {
-            atualizar_display_status(&ssd, OPERACAO_MPU);
-            modo = true;
-            log_mpu_data();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-            printf("\nEscolha o comando (h = help):  ");
-        }
-        if (cRxedChar == 'h') // Exibe os comandos disponíveis se pressionar 'h'
-        {
-            atualizar_display_status(&ssd, OPERACAO_HELP);
-            run_help();
-            sleep_ms(1500);
-            buzz(BUZZER, 500, 250);
-            op_concluida(&ssd);
-        }
-        
-        sleep_ms(500);
-    }
     return 0;
 }

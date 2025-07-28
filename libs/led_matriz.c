@@ -1,14 +1,36 @@
 #include "led_matriz.h"
 
-
-static double ligar_todos_leds[25] = {
-    1.0, 1.0, 1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0, 1.0, 1.0, 
-    1.0, 1.0, 1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0, 1.0, 1.0
+static double checkmark[25] = {
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    1.0, 0.0, 0.0, 0.0, 0.0, 
+    0.0, 0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 0.0, 0.0
 };
 
+static double ponto_frame_1[NUM_PIXELS] = { // "."
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0
+};
+
+static double ponto_frame_2[NUM_PIXELS] = { // ".."
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0
+};
+
+static double ponto_frame_3[NUM_PIXELS] = { // "..."
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 1.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 0.0
+};
 
 // Estrutura do semáforo completo (para visualização)
 static double apagar[25] = {
@@ -19,6 +41,31 @@ static double apagar[25] = {
     0.0, 0.0, 0.0, 0.0, 0.0
 };
 
+static double* animacao_ponto_frames[] = {
+    ponto_frame_1,
+    ponto_frame_2,
+    ponto_frame_3
+};
+
+static const int PONTO_NUM_TOTAL_FRAMES = sizeof(animacao_ponto_frames) / sizeof(animacao_ponto_frames[0]);
+static int ponto_frame_atual_idx = 0; // Índice para controlar qual frame exibir
+
+// Função para desenhar o próximo frame da animação da ventoinha
+void animacao_ponto_desenhar_proximo_frame(PIO pio, uint sm, double r, double g, double b) {
+    uint32_t valor_led_dummy = 0; // O valor real é definido dentro de desenho_pio
+
+    // Pega o ponteiro para o padrão do frame atual
+    double* padrao_frame_atual = animacao_ponto_frames[ponto_frame_atual_idx];
+
+    // Usa sua função existente para desenhar o padrão com a cor especificada
+    desenho_pio(padrao_frame_atual, valor_led_dummy, pio, sm, r, g, b);
+
+    // Avança para o próximo frame, voltando ao início se necessário
+    ponto_frame_atual_idx++;
+    if (ponto_frame_atual_idx >= PONTO_NUM_TOTAL_FRAMES) {
+        ponto_frame_atual_idx = 0;
+    }
+}
 
 // Função existente para converter RGB em valor de 32 bits (formato GRB)
 // Rotina para definir a intensidade das cores do LED (RGB)
@@ -49,14 +96,14 @@ void desenho_pio(double *desenho, uint32_t valor_led, PIO pio, uint sm, double r
 void apagar_matriz(PIO pio, uint sm){
     uint32_t valor_led;
 
-    desenho_pio(apagar, valor_led, pio, sm, 0.0, 0.0, 0.0); // Vermelho (r=1.0)
+    desenho_pio(apagar, valor_led, pio, sm, 0.0, 0.0, 0.0); 
 }
 
-void ligar_matriz_toda(PIO pio, uint sm, double r, double g, double b) {
+void ligar_checkmark(PIO pio, uint sm, double r, double g, double b) {
     uint32_t valor_led_dummy = 0; // O valor real é definido dentro de desenho_pio
     
     // Usa o padrão 'padrao_todos_ligados' e os parâmetros de cor RGB
-    desenho_pio(ligar_todos_leds, valor_led_dummy, pio, sm, r, g, b);
+    desenho_pio(checkmark, valor_led_dummy, pio, sm, r, g, b);
 }
 
 uint pio_init(PIO pio){

@@ -19,16 +19,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(PICO_BOARD pico_w CACHE STRING "Board type")
 include(pico_sdk_import.cmake)
+
+
 project(Usar_SSD C CXX ASM)
 pico_sdk_init()
 
+set(FREERTOS_KERNEL_PATH "C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/FreeRTOS-Kernel")
+include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
 
 add_subdirectory(lib/FatFs_SPI)    
 
 add_executable(${PROJECT_NAME}  
         Cartao_FatFS_SPI.c
         hw_config.c
-        #${CMAKE_CURRENT_LIST_DIR}/libs/led_matriz.c
+        ${CMAKE_CURRENT_LIST_DIR}/libs/led_matriz.c
         ${CMAKE_CURRENT_LIST_DIR}/libs/ssd1306.c
         ${CMAKE_CURRENT_LIST_DIR}/libs/buzzer.c
         )
@@ -36,6 +40,8 @@ add_executable(${PROJECT_NAME}
     
 
 target_link_libraries(${PROJECT_NAME} 
+        FreeRTOS-Kernel         # Kernel do FreeRTOS
+        FreeRTOS-Kernel-Heap4   # Gerenciador de memoria
         pico_stdlib 
         FatFs_SPI
         hardware_clocks
@@ -43,6 +49,12 @@ target_link_libraries(${PROJECT_NAME}
         hardware_i2c
         hardware_pio
         )
+
+# Adiciona os diretórios de inclusão para o compilador encontrar os .h
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}           # Diretório raiz do projeto (onde está o FreeRTOSConfig.h)
+    ${CMAKE_CURRENT_LIST_DIR}/libs      # Diretório das suas bibliotecas (ssd1306.h, etc.)
+)
 
 pico_enable_stdio_usb(${PROJECT_NAME} 1)
 pico_enable_stdio_uart(${PROJECT_NAME} 0)

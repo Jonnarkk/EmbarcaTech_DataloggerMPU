@@ -196,5 +196,7 @@ C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/pico-sdk/src/rp2_common/pico_stdlib/CMakeFiles/rebuild_cache.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/pico-sdk/docs/CMakeFiles/edit_cache.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/pico-sdk/docs/CMakeFiles/rebuild_cache.dir
+C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/FREERTOS_KERNEL/CMakeFiles/edit_cache.dir
+C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/FREERTOS_KERNEL/CMakeFiles/rebuild_cache.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/lib/FatFs_SPI/CMakeFiles/edit_cache.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/lib/FatFs_SPI/CMakeFiles/rebuild_cache.dir

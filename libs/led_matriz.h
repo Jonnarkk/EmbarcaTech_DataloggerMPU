@@ -10,7 +10,8 @@
 // Protótipos das funções existentes
 uint32_t matrix_rgb(double b, double r, double g);
 void desenho_pio(double *desenho, uint32_t valor_led, PIO pio, uint sm, double r, double g, double b);
-void ligar_matriz_toda(PIO pio, uint sm, double r, double g, double b);
+void ligar_checkmark(PIO pio, uint sm, double r, double g, double b);
+void animacao_ponto_desenhar_proximo_frame(PIO pio, uint sm, double r, double g, double b);
 void apagar_matriz(PIO pio, uint sm);
 
 
