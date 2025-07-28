@@ -8,6 +8,8 @@
 
 #include "hardware/adc.h"
 #include "pico/stdlib.h"
+#include "libs/ssd1306.h"
+#include "libs/buzzer.h"
 
 // Bibliotecas para o MPU6050
 #include "pico/binary_info.h"
@@ -29,12 +31,17 @@
 #define I2C_SDA 0                   // 0 ou 2
 #define I2C_SCL 1                  // 1 ou 3
 
+#define botaoA 5
+#define BUZZER 10
 
 // Variáveis Globais
 static int addr = 0x68;             // O endereço padrao deste IMU é o 0x68
 static bool logger_enabled;
 static const uint32_t period = 1000;
 static absolute_time_t next_log_time;
+absolute_time_t last_press = 0;
+volatile bool modo = true;
+ssd1306_t ssd;
 
 static char filename[20] = "adc_data1.txt";
 static const char* log_filename = "logs_mpu.csv";
@@ -458,7 +465,24 @@ void log_mpu_data(){
 #define botaoB 6
 void gpio_irq_handler(uint gpio, uint32_t events)
 {
-    reset_usb_boot(0, 0);
+    if(gpio == botaoA){
+        absolute_time_t current = to_ms_since_boot(get_absolute_time());
+        if(current - last_press > 200){
+            modo = !modo;
+            if(modo)
+                atualizar_display_status(&ssd, OPERACAO_MODO_MPU);
+            else
+                atualizar_display_status(&ssd, OPERACAO_MODO_ADC);
+                
+        }
+        last_press = current;
+    }
+    if(gpio == botaoB){
+        ssd1306_fill(&ssd, false);
+        ssd1306_send_data(&ssd);
+        reset_usb_boot(0, 0);
+
+    }
 }
 
 static void run_help()
@@ -558,13 +582,22 @@ static void process_stdio(int cRxedChar)
 
 // Função para inicialização dos periféricos utilizados
 void setup(){
+    // Inicialização do botão A
+    gpio_init(botaoA);
+    gpio_set_dir(botaoA, GPIO_IN);
+    gpio_pull_up(botaoA);
+    gpio_set_irq_enabled_with_callback(botaoA, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
     // Para ser utilizado o modo BOOTSEL com botão B
     gpio_init(botaoB);
     gpio_set_dir(botaoB, GPIO_IN);
     gpio_pull_up(botaoB);
     gpio_set_irq_enabled_with_callback(botaoB, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
-// This example will use I2C0 on the default SDA and SCL pins (4, 5 on a Pico)
+    // Inicialização do Buzzer
+    gpio_init(BUZZER);
+    gpio_set_dir(BUZZER, GPIO_OUT);
+
+    // This example will use I2C0 on the default SDA and SCL pins (4, 5 on a Pico)
     i2c_init(I2C_PORT, 400 * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -575,6 +608,9 @@ void setup(){
     bi_decl(bi_2pins_with_func(I2C_SDA, I2C_SCL, GPIO_FUNC_I2C));
     printf("Antes do reset MPU...\n");
     mpu6050_reset();
+
+    // Inicialização do display
+    display_init(&ssd);
 }
 
 int main(){
@@ -585,6 +621,7 @@ int main(){
     sleep_ms(5000);
     time_init();
     adc_init();
+    tela_inicial(&ssd);
 
     printf("FatFS SPI example\n");
     printf("\033[2J\033[H"); // Limpa tela
@@ -600,56 +637,99 @@ int main(){
             process_stdio(cRxedChar);
 
         if (cRxedChar == 'a') // Monta o SD card se pressionar 'a'
-        {
+        {   
+            montagem_sd(&ssd);
             printf("\nMontando o SD...\n");
+            atualizar_display_status(&ssd, OPERACAO_MONTANDO);
             run_mount();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'b') // Desmonta o SD card se pressionar 'b'
         {
             printf("\nDesmontando o SD. Aguarde...\n");
+            atualizar_display_status(&ssd, OPERACAO_DESMONTANDO);
             run_unmount();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'c') // Lista diretórios e os arquivos se pressionar 'c'
         {
             printf("\nListagem de arquivos no cartão SD.\n");
+            atualizar_display_status(&ssd, OPERACAO_LISTAGEM);
             run_ls();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nListagem concluída.\n");
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'd') // Exibe o conteúdo do arquivo se pressionar 'd'
         {
-            read_file(log_filename);
+            atualizar_display_status(&ssd, OPERACAO_LEITURA);
+            if(modo)
+                read_file(log_filename);
+            else 
+                read_file(filename);
+            sleep_ms(1500);
+            buzz(BUZZER, 300, 200);
+            op_concluida(&ssd);
             printf("Escolha o comando (h = help):  ");
         }
         if (cRxedChar == 'e') // Obtém o espaço livre no SD card se pressionar 'e'
         {
             printf("\nObtendo espaço livre no SD.\n\n");
+            atualizar_display_status(&ssd, OPERACAO_ESPACO);
             run_getfree();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nEspaço livre obtido.\n");
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'f') // Captura dados do ADC e salva no arquivo se pressionar 'f'
         {
+            atualizar_display_status(&ssd, OPERACAO_ADC);
+            modo = false;
             capture_adc_data_and_save();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'g') // Formata o SD card se pressionar 'g'
         {
             printf("\nProcesso de formatação do SD iniciado. Aguarde...\n");
+            atualizar_display_status(&ssd, OPERACAO_FORMATACAO);
             run_format();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nFormatação concluída.\n\n");
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'i') {
+            atualizar_display_status(&ssd, OPERACAO_MPU);
+            modo = true;
             log_mpu_data();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
             printf("\nEscolha o comando (h = help):  ");
         }
         if (cRxedChar == 'h') // Exibe os comandos disponíveis se pressionar 'h'
         {
+            atualizar_display_status(&ssd, OPERACAO_HELP);
             run_help();
+            sleep_ms(1500);
+            buzz(BUZZER, 500, 250);
+            op_concluida(&ssd);
         }
+        
         sleep_ms(500);
     }
     return 0;

@@ -1,4 +1,5 @@
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/CMakeFiles/Usar_SSD.dir
+C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/CMakeFiles/Usar_SSD_pio_matriz_pio_h.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/CMakeFiles/edit_cache.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/CMakeFiles/rebuild_cache.dir
 C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/pico-sdk/CMakeFiles/edit_cache.dir
