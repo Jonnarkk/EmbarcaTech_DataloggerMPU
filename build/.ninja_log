@@ -11,7 +11,7 @@
 186	345	7750978895831470	pico-sdk/src/rp2040/boot_stage2/bs2_default.elf	75d2532b8e5007e0
 654	1223	7747990081697321	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/common/hardware_claim/claim.c.obj	aeb2113bd2b225
 345	377	7750978897725938	pico-sdk/src/rp2040/boot_stage2/bs2_default.bin	7d024bcfadb49ed8
-10	700	7754409685368679	build.ninja	ef9ad4f65967ca7b
+27	791	7755376104337741	build.ninja	ef9ad4f65967ca7b
 643	1141	7747990081587290	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/rp2_common/pico_platform_panic/panic.c.obj	1f786aeecdf76cdc
 2404	2711	7754404222781952	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_xip_cache/xip_cache.c.obj	265b8d35a803f3ee
 2103	2403	7747990096203807	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_boot_lock/boot_lock.c.obj	5c5d145d05c7f297
@@ -41,7 +41,7 @@
 1199	1557	7747990087144601	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/common/pico_sync/critical_section.c.obj	f74c6bda97d3a5fb
 1666	2016	7747990091821823	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_vreg/vreg.c.obj	55762fe2183edd49
 623	1587	7747990081387115	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_gpio/gpio.c.obj	b225854435e337dc
-114	1103	7754404199883966	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
+43	481	7754415319045575	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
 134	548	7754404200074630	CMakeFiles/Usar_SSD.dir/libs/buzzer.c.obj	30420f45f2830f8
 1629	2078	7754404215023088	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2_common/pico_runtime_init/runtime_init.c.obj	dc17fb2efb4b11e7
 1223	1656	7747990087384683	CMakeFiles/Usar_SSD.dir/C_/Users/wilto/.pico-sdk/sdk/2.1.1/src/common/pico_time/timeout_helper.c.obj	70320e5c4c79856c
@@ -131,7 +131,7 @@
 3372	4263	7754404232461809	CMakeFiles/Usar_SSD.dir/lib/FatFs_SPI/sd_driver/sd_card.c.obj	2e3f2caf7a685853
 2213	2920	7754404220874290	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.obj	ef8bd63ddb0070d8
 3309	6181	7754404231827119	CMakeFiles/Usar_SSD.dir/lib/FatFs_SPI/ff15/source/ff.c.obj	a7348fd78a08a28f
-6182	6584	7754404260549762	Usar_SSD.elf	f08d6791d04dac46
+481	816	7754415323417285	Usar_SSD.elf	e35915a36879ec42
 377	444	7750978898361768	C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/pico-sdk/src/rp2040/boot_stage2/bs2_default_padded_checksummed.S	bbf8520b09e99fc8
 730	993	7754404206046374	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_irq/irq_handler_chain.S.obj	9860893cb03be629
 204	510	7754404200798009	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2040/pico_platform/platform.c.obj	4360a414dca0a671
@@ -202,7 +202,7 @@
 3763	4040	7754404236375063	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_rtc/rtc.c.obj	ae4d801466968948
 44	194	7753564075815801	pio_matriz.pio.h	9dcddfe96bbb61ac
 44	194	7753564075815801	C:/Users/Miller/Desktop/Univasf/Semestre III/Embarca/EmbarcaTechResU3Ex07/build/pio_matriz.pio.h	9dcddfe96bbb61ac
-41	457	7753565276145550	CMakeFiles/Usar_SSD.dir/libs/led_matriz.c.obj	e0fd0c01833aa49e
+59	309	7754409686364602	CMakeFiles/Usar_SSD.dir/libs/led_matriz.c.obj	1b4ade78c0b50167
 3881	4335	7754404237557055	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/.pico-sdk/sdk/2.1.1/src/rp2_common/hardware_pio/pio.c.obj	f72694323fef0037
 143	475	7754404200165642	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/Desktop/Univasf/Semestre_III/Embarca/FreeRTOS-Kernel/croutine.c.obj	787b20a7779d8df9
 152	633	7754404200265729	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/Desktop/Univasf/Semestre_III/Embarca/FreeRTOS-Kernel/list.c.obj	b40f6edb99a5de98
@@ -211,15 +211,3 @@
 184	746	7754404200626916	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/Desktop/Univasf/Semestre_III/Embarca/FreeRTOS-Kernel/timers.c.obj	d63539981131c7ba
 172	1364	7754404200506805	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/Desktop/Univasf/Semestre_III/Embarca/FreeRTOS-Kernel/tasks.c.obj	292ece00e9acf4ee
 1528	1997	7754404214018651	CMakeFiles/Usar_SSD.dir/C_/Users/Miller/Desktop/Univasf/Semestre_III/Embarca/FreeRTOS-Kernel/portable/MemMang/heap_4.c.obj	aa74645842e1c884
-27	791	7754409685368679	build.ninja	ef9ad4f65967ca7b
-59	309	7754409686364602	CMakeFiles/Usar_SSD.dir/libs/led_matriz.c.obj	1b4ade78c0b50167
-47	477	7754410004905324	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
-477	824	7754410009214676	Usar_SSD.elf	e35915a36879ec42
-48	485	7754411773306706	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
-485	835	7754411777682346	Usar_SSD.elf	e35915a36879ec42
-45	488	7754413223477752	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
-489	838	7754413227920602	Usar_SSD.elf	e35915a36879ec42
-44	487	7754414376193353	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
-488	829	7754414380630218	Usar_SSD.elf	e35915a36879ec42
-43	481	7754415319045575	CMakeFiles/Usar_SSD.dir/Cartao_FatFS_SPI.c.obj	cb53708e58497e5e
-481	816	7754415323417285	Usar_SSD.elf	e35915a36879ec42

@@ -1,7 +1,7 @@
 # FatFS SPI Example - Raspberry Pi Pico
 
 Este projeto demonstra como usar um cartão SD com sistema de arquivos FAT (FatFS) em um **Raspberry Pi Pico**, realizando operações de leitura, escrita e listagem de arquivos via comandos no terminal.  
-O código também inclui uma rotina de aquisição de dados do ADC (canal 0, GPIO 26) e registro dos dados em arquivo.
+O código também inclui uma rotina de aquisição de dados do ADC (canal 0, GPIO 26) e do sensor MPU6050 (I2C0), além do registro dos dados em arquivo.
 
 ## Funcionalidades
 
@@ -43,13 +43,13 @@ O código também inclui uma rotina de aquisição de dados do ADC (canal 0, GPI
 | `e`    | Mostra o espaço livre no cartão SD (`getfree`)                   |
 | `f`    | Captura 128 amostras do ADC e salva no arquivo `adc_data2.txt`   |
 | `h`    | Exibe os comandos disponíveis (`help`)                           |
+| `i`    | Captura 100 amostras do MPU e salva no arquivo `logs_mpu.csv`    |
 
 
 ## Gera gráficos
 
 Um arquivo em python é disponibilizado para geração dos gráficos. 
-A biblioteca matplotlib é usada para produção gráfica.
-A IDE do Thonny pode ser utilizada.
+As bibliotecas matplotlib e pandas são usadas para produção gráfica.
 
 
 ---

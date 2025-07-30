@@ -258,16 +258,6 @@ void modo_atual(ssd1306_t *ssd, bool modo){
   ssd1306_send_data(ssd);
 }
 
-void montagem_sd(ssd1306_t *ssd){
-  ssd1306_fill(ssd, false);   // Limpa a tela
-
-  ssd1306_rect(ssd, 0, 0, 128, 64, true, false);  // Retângulo na tela
-  ssd1306_draw_string(ssd, "Montando", centralizar_texto("Montando"), 25);
-  ssd1306_draw_string(ssd, "Cartao SD", centralizar_texto("Cartao SD"), 35);
-
-  ssd1306_send_data(ssd);
-}
-
 void atualizar_display_status(ssd1306_t *ssd, Operacao_t status) {
     ssd1306_fill(ssd, false); // Limpa o display
     char *mensagem = "";

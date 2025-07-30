@@ -423,7 +423,6 @@ void log_mpu_data(){
 
     // Variáveis para armazenar os dados do sensor
     int16_t acceleration[3], gyro[3], temp;
-    datetime_t t;
     char buffer[128];
 
     // Loop de logging para coletar as amostras
