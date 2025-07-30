@@ -39,7 +39,7 @@ O código também inclui uma rotina de aquisição de dados do ADC (canal 0, GPI
 | `a`    | Monta o cartão SD (`mount`)                                      |
 | `b`    | Desmonta o cartão SD (`unmount`)                                 |
 | `c`    | Lista os arquivos do cartão SD (`ls`)                            |
-| `d`    | Lê e exibe o conteúdo do arquivo `adc_data2.txt`                 |
+| `d`    | Lê e exibe o conteúdo do arquivo `adc_data1.txt`                 |
 | `e`    | Mostra o espaço livre no cartão SD (`getfree`)                   |
 | `f`    | Captura 128 amostras do ADC e salva no arquivo `adc_data1.txt`   |
 | `h`    | Exibe os comandos disponíveis (`help`)                           |
