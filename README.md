@@ -8,7 +8,7 @@ O código também inclui uma rotina de aquisição de dados do ADC (canal 0, GPI
 - **Formatação**, montagem e desmontagem do cartão SD (com FatFS).
 - **Listagem** de arquivos e diretórios (comando `ls`).
 - **Leitura** do conteúdo de arquivos (comando `cat`).
-- **Aquisição de dados** do ADC e salvamento automático em arquivo (`adc_data2.txt`).
+- **Aquisição de dados** do ADC e salvamento automático em arquivo (`adc_data1.txt`).
 - **Exibição de espaço livre** no cartão SD.
 - **Configuração de data/hora** do RTC integrado.
 - **Atalhos de teclado** para comandos rápidos no terminal.
@@ -41,7 +41,7 @@ O código também inclui uma rotina de aquisição de dados do ADC (canal 0, GPI
 | `c`    | Lista os arquivos do cartão SD (`ls`)                            |
 | `d`    | Lê e exibe o conteúdo do arquivo `adc_data2.txt`                 |
 | `e`    | Mostra o espaço livre no cartão SD (`getfree`)                   |
-| `f`    | Captura 128 amostras do ADC e salva no arquivo `adc_data2.txt`   |
+| `f`    | Captura 128 amostras do ADC e salva no arquivo `adc_data1.txt`   |
 | `h`    | Exibe os comandos disponíveis (`help`)                           |
 | `i`    | Captura 100 amostras do MPU e salva no arquivo `logs_mpu.csv`    |
 
